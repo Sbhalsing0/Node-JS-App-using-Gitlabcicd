@@ -1,0 +1,23 @@
+{
+  "name": "my-simple-pipeline",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha 'test/*.js'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/kthorecha/my-simple-pipeline.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/kthorecha/my-simple-pipeline/issues"
+  },
+  "homepage": "https://gitlab.com/kthorecha/my-simple-pipeline#readme",
+  "dependencies": {
+    "mocha": "^8.1.3",
+    "supertest": "^5.0.0"
+  }
+}

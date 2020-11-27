@@ -1,0 +1,58 @@
+image:
+  name: amazon/aws-cli
+  entrypoint: [""]
+services:
+ - docker:dind
+variables:
+    DOCKER_REGISTRY: 657309275978.dkr.ecr.ap-south-1.amazonaws.com
+    AWS_DEFAULT_REGION: ap-south-1
+    APP_NAME: myapp
+    TAG: $CI_PIPELINE_IID
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  tags:
+  - latest
+  before_script:
+  - aws --version
+  - df -h
+  - echo $CI_PIPELINE_IID
+  #- yum install -y openssh-clients
+  - amazon-linux-extras install docker
+  - docker --version
+  - export CI_PIPELINE_IID=$CI_PIPELINE_IID
+  - chmod +x ./setup_env.sh
+  - bash ./setup_env.sh
+  - cat .env
+
+  script:
+  - docker build -t $DOCKER_REGISTRY/$APP_NAME:$CI_PIPELINE_IID  .
+  - aws ecr get-login-password | docker login --username AWS --password-stdin $DOCKER_REGISTRY
+  - docker tag $DOCKER_REGISTRY/$APP_NAME:$CI_PIPELINE_IID $DOCKER_REGISTRY/$APP_NAME
+  ##- docker tag $DOCKER_REGISTRY/$APP_NAME:$CI_PIPELINE_IID $DOCKER_REGISTRY/$APP_NAME
+  - docker push $DOCKER_REGISTRY/$APP_NAME:$CI_PIPELINE_IID
+
+deploy:
+  stage: deploy
+  tags:
+   - latest
+  before_script:
+  - yum install -y openssh-clients
+  
+  script:
+    - mkdir -p ~/.ssh
+    - echo -e "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+    - cat ~/.ssh/id_rsa
+    - chmod 700 ~/.ssh/id_rsa
+    - eval "$(ssh-agent -s)"
+    - ssh-add ~/.ssh/id_rsa
+    - ssh-keyscan -H 'gitlab.com' >> ~/.ssh/known_hosts
+    - chmod +x ./deploy.sh
+    - chmod +x ./setup_env.sh
+    - bash ./setup_env.sh
+    - cat .env
+    - scp -o StrictHostKeyChecking=no -r .env ubuntu@$DEPLOY_SERVERS:/home/ubuntu/app
+    - bash ./deploy.sh
